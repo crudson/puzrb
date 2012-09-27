@@ -1,0 +1,852 @@
+
+ 
+
+
+
+ 
+ 
+ 
+
+
+
+ 
+ 
+ <!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+ <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" >
+ 
+ <meta name="ROBOTS" content="NOARCHIVE">
+ 
+ <link rel="icon" type="image/vnd.microsoft.icon" href="https://ssl.gstatic.com/codesite/ph/images/phosting.ico">
+ 
+ 
+ <link rel="canonical" href="http://code.google.com/p/puz/wiki/FileFormat" />
+ 
+ <script type="text/javascript">
+ 
+ 
+ 
+ 
+ var codesite_token = null;
+ 
+ 
+ var CS_env = {"profileUrl":null,"token":null,"assetHostPath":"https://ssl.gstatic.com/codesite/ph","domainName":null,"assetVersionPath":"https://ssl.gstatic.com/codesite/ph/16186173366037945081","projectHomeUrl":"/p/puz","relativeBaseUrl":"","projectName":"puz","loggedInUserEmail":null};
+ var _gaq = _gaq || [];
+ _gaq.push(
+ ['siteTracker._setAccount', 'UA-18071-1'],
+ ['siteTracker._trackPageview']);
+ 
+ _gaq.push(
+ ['projectTracker._setAccount', 'UA-15189580-1'],
+ ['projectTracker._trackPageview']);
+ 
+ (function() {
+ var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+ ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+ (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
+ })();
+ 
+ </script>
+ 
+ 
+ <title>FileFormat - 
+ puz -
+ 
+ Detailed file format documentation - 
+ Documentation and libraries for Across Lite&#39;s .PUZ format; multiplayer crossword interface - Google Project Hosting
+ </title>
+ <link type="text/css" rel="stylesheet" href="https://ssl.gstatic.com/codesite/ph/16186173366037945081/css/core.css">
+ 
+ <link type="text/css" rel="stylesheet" href="https://ssl.gstatic.com/codesite/ph/16186173366037945081/css/ph_detail.css" >
+ 
+ 
+ 
+ <link type="application/atom+xml" rel="alternate" href="/feeds/p/puz/svnchanges/basic?path=/wiki/FileFormat.wiki">
+ 
+ 
+<!--[if IE]>
+ <link type="text/css" rel="stylesheet" href="https://ssl.gstatic.com/codesite/ph/16186173366037945081/css/d_ie.css" >
+<![endif]-->
+ <style type="text/css">
+ .menuIcon.off { background: no-repeat url(https://ssl.gstatic.com/codesite/ph/images/dropdown_sprite.gif) 0 -42px }
+ .menuIcon.on { background: no-repeat url(https://ssl.gstatic.com/codesite/ph/images/dropdown_sprite.gif) 0 -28px }
+ .menuIcon.down { background: no-repeat url(https://ssl.gstatic.com/codesite/ph/images/dropdown_sprite.gif) 0 0; }
+ 
+ 
+ #maincol {
+ padding-top: 0;
+ padding-bottom: 0;
+ }
+
+ 
+ </style>
+</head>
+<body class="t6">
+<script type="text/javascript">
+ window.___gcfg = {lang: 'en'};
+ (function() 
+ {var po = document.createElement("script");
+ po.type = "text/javascript"; po.async = true;po.src = "https://apis.google.com/js/plusone.js";
+ var s = document.getElementsByTagName("script")[0];
+ s.parentNode.insertBefore(po, s);
+ })();
+</script>
+<div class="headbg">
+
+ <div id="gaia">
+ 
+
+ <span>
+ 
+ 
+ <a href="#" id="projects-dropdown" onclick="return false;"><u>My favorites</u> <small>&#9660;</small></a>
+ | <a href="https://www.google.com/accounts/ServiceLogin?service=code&amp;ltmpl=phosting&amp;continue=https%3A%2F%2Fcode.google.com%2Fp%2Fpuz%2Fwiki%2FFileFormat&amp;followup=https%3A%2F%2Fcode.google.com%2Fp%2Fpuz%2Fwiki%2FFileFormat" onclick="_CS_click('/gb/ph/signin');"><u>Sign in</u></a>
+ 
+ </span>
+
+ </div>
+
+ <div class="gbh" style="left: 0pt;"></div>
+ <div class="gbh" style="right: 0pt;"></div>
+ 
+ 
+ <div style="height: 1px"></div>
+<!--[if lte IE 7]>
+<div style="text-align:center;">
+Your version of Internet Explorer is not supported. Try a browser that
+contributes to open source, such as <a href="http://www.firefox.com">Firefox</a>,
+<a href="http://www.google.com/chrome">Google Chrome</a>, or
+<a href="http://code.google.com/chrome/chromeframe/">Google Chrome Frame</a>.
+</div>
+<![endif]-->
+
+
+
+ <table style="padding:0px; margin: 0px 0px 10px 0px; width:100%" cellpadding="0" cellspacing="0"
+ itemscope itemtype="http://schema.org/CreativeWork">
+ <tr style="height: 58px;">
+ 
+ 
+ 
+ <td id="plogo">
+ <link itemprop="url" href="/p/puz">
+ <a href="/p/puz/">
+ 
+ <img src="https://ssl.gstatic.com/codesite/ph/images/defaultlogo.png" alt="Logo" itemprop="image">
+ 
+ </a>
+ </td>
+ 
+ <td style="padding-left: 0.5em">
+ 
+ <div id="pname">
+ <a href="/p/puz/"><span itemprop="name">puz</span></a>
+ </div>
+ 
+ <div id="psum">
+ <a id="project_summary_link"
+ href="/p/puz/"><span itemprop="description">Documentation and libraries for Across Lite&#39;s .PUZ format; multiplayer crossword interface</span></a>
+ 
+ </div>
+ 
+ 
+ </td>
+ <td style="white-space:nowrap;text-align:right; vertical-align:bottom;">
+ 
+ <form action="/hosting/search">
+ <input size="30" name="q" value="" type="text">
+ 
+ <input type="submit" name="projectsearch" value="Search projects" >
+ </form>
+ 
+ </tr>
+ </table>
+
+</div>
+
+ 
+<div id="mt" class="gtb"> 
+ <a href="/p/puz/" class="tab ">Project&nbsp;Home</a>
+ 
+ 
+ 
+ 
+ <a href="/p/puz/downloads/list" class="tab ">Downloads</a>
+ 
+ 
+ 
+ 
+ 
+ <a href="/p/puz/w/list" class="tab active">Wiki</a>
+ 
+ 
+ 
+ 
+ 
+ <a href="/p/puz/issues/list"
+ class="tab ">Issues</a>
+ 
+ 
+ 
+ 
+ 
+ <a href="/p/puz/source/checkout"
+ class="tab ">Source</a>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ <div class=gtbc></div>
+</div>
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0" class="st">
+ <tr>
+ 
+ 
+ 
+ 
+ <td class="subt">
+ <div class="issueDetail">
+<div class="isf">
+ 
+ <span class="inIssueList"> 
+ <span>Search</span>
+ <form action="/p/puz/w/list" method="GET" style="display:inline">
+ <select id="can" name="can" >
+ <option disabled="disabled">Search within:</option>
+ 
+ <option value="1" >&nbsp;All wiki pages</option>
+ <option value="3" >&nbsp;Featured pages</option>
+ <option value="2" selected="selected">&nbsp;Current pages</option>
+ 
+ 
+ <option value="4" >&nbsp;Deprecated pages</option>
+ 
+ </select>
+ <span>for</span>
+ <span id="qq"><input type="text" size="38" id="searchq" name="q" value=""
+ autocomplete="off" ></span>
+ 
+ 
+ 
+ <input type="submit" value="Search" >
+ </form>
+ </span>
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+</div>
+</div>
+
+ </td>
+ 
+ 
+ 
+ 
+ 
+ 
+ <td align="right" valign="top" class="bevel-right"></td>
+ </tr>
+</table>
+
+
+<script type="text/javascript">
+ var cancelBubble = false;
+ function _go(url) { document.location = url; }
+</script>
+<div id="maincol"
+ 
+>
+
+ 
+<!-- IE -->
+
+
+
+
+
+
+
+ <style type="text/css">
+ .delcom { background: #e8e8e8 }
+ .commentcontent {
+ margin: 2em;
+ padding: 0px 10px;
+ width: 66em;
+ }
+ .artifactcomment {
+ border-top: 3px solid #c3d9ff;
+ }
+ #commentform {
+ border-top: 3px solid #c3d9ff;
+ }
+ </style>
+
+<div id="wikipage">
+<table>
+ <tr>
+ 
+ 
+ <td style="vertical-align:top; padding-left:5px">
+ 
+ <div id="wikiheader">
+ 
+ <span style="font-size:120%;font-weight:bold">FileFormat</span>
+ &nbsp;
+ <div> 
+ 
+ <i>Detailed file format documentation</i>
+ 
+ 
+ 
+ <div id="wikiauthor" style="float:right">
+ Updated <span title="Sat Feb 20 14:45:38 2010">
+ Feb 20, 2010</span>
+ 
+ by 
+
+ <a class="userlink"
+ href="/u/Chris.Casinghino@gmail.com/">Chris.Casinghino@gmail.com</a
+>
+ 
+ </div>
+ </div>
+ </div>
+ 
+ <div id="wikicontent">
+ <div class="vt" id="wikimaincol">
+ <p>Table of contents: </p><p><ul><li><a href="#Introduction">Introduction</a></li><li><a href="#File_Contents">File Contents</a></li><li><a href="#Clue_Assignment">Clue Assignment</a></li><li><a href="#Checksums">Checksums</a></li><li><a href="#Locked/Scrambled_Puzzles">Locked/Scrambled Puzzles</a></li><li><a href="#Extra_Sections">Extra Sections</a></li><li><a href="#What_remains">What remains</a></li><li><a href="#Credit">Credit</a></li></ul> </p><h1><a name="Introduction"></a>Introduction<a href="#Introduction" class="section_anchor"></a></h1><p>PUZ is a file format commonly used by commercial software for crossword puzzles. There is, to our knowledge, no documentation of the format available online.  This page (and the implementations) is the result of a bit of reverse engineering work. </p><p>The documentation is mostly complete.  Implementations based on this documentation seem to support, for example, all (or the vast majority of) New York Times puzzles.  The few remaining unknown pieces are noted. </p><p>We have no real financial interest in this; it was just a fun hack. </p><h1><a name="File_Contents"></a>File Contents<a href="#File_Contents" class="section_anchor"></a></h1><p>The file is laid out like this: <ol><li>a fixed-size header with information like the width and height of the puzzle </li><li>the puzzle solution and the current state of the cells, with size determined by the puzzle dimensions described in the previous section </li><li>a series of NUL-terminated variable-length strings with information like the author, copyright, the puzzle clues and a note about the puzzle. </li><li>optionally, a series of sections with additional information about the puzzle, like rebuses, circled squares, and timer data. </li></ol></p><h2><a name="Header_Format"></a>Header Format<a href="#Header_Format" class="section_anchor"></a></h2><p>Define a <i>short</i> to be a little-endian two byte integer.  The file header is then described in the following table. </p><p><table class="wikitable"><tr><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Component</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Offset</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>End</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Length</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Type</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Description</strong> </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Checksum </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x00 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x01 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2 </td><td style="border: 1px solid #ccc; padding: 5px;"> short </td><td style="border: 1px solid #ccc; padding: 5px;"> overall file checksum </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> File Magic </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x02 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x0D </td><td style="border: 1px solid #ccc; padding: 5px;"> 0xC </td><td style="border: 1px solid #ccc; padding: 5px;"> string </td><td style="border: 1px solid #ccc; padding: 5px;"> NUL-terminated constant string: 4143 524f 5353 2644 4f57 4e00 (&quot;ACROSS&amp;DOWN&quot;) </td></tr> </table></p><p>The following checksums are described in more detail in a separate section below. <table class="wikitable"><tr><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Component</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Offset</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>End</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Length</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Type</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Description</strong> </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> CIB Checksum </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x0E </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x0F </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2 </td><td style="border: 1px solid #ccc; padding: 5px;"> short </td><td style="border: 1px solid #ccc; padding: 5px;"> (defined later) </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Masked Low Checksums </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x10 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x13 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x4 </td><td style="border: 1px solid #ccc; padding: 5px;"> </td><td style="border: 1px solid #ccc; padding: 5px;"> A set of checksums, XOR-masked against a magic string. </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Masked High Checksums </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x14 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x17 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x4 </td><td style="border: 1px solid #ccc; padding: 5px;"> </td><td style="border: 1px solid #ccc; padding: 5px;"> A set of checksums, XOR-masked against a magic string. </td></tr> </table></p><p><table class="wikitable"><tr><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Component</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Offset</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>End</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Length</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Type</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Description</strong> </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Version String(?) </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x18 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x1B </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x4 </td><td style="border: 1px solid #ccc; padding: 5px;"> string </td><td style="border: 1px solid #ccc; padding: 5px;"> e.g. &quot;1.2\0&quot; </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Reserved1C(?) </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x1C </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x1D </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2 </td><td style="border: 1px solid #ccc; padding: 5px;"> ? </td><td style="border: 1px solid #ccc; padding: 5px;"> In many files, this is uninitialized memory </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Scrambled Checksum </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x1E </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x1F </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2 </td><td style="border: 1px solid #ccc; padding: 5px;"> short </td><td style="border: 1px solid #ccc; padding: 5px;"> In scrambled puzzles, a checksum of the real solution (details below).  Otherwise, 0x0000. </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Reserved20(?) </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x20 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2B </td><td style="border: 1px solid #ccc; padding: 5px;"> 0xC </td><td style="border: 1px solid #ccc; padding: 5px;"> ? </td><td style="border: 1px solid #ccc; padding: 5px;"> In files where Reserved1C is garbage, this is garbage too. </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Width </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2C </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2C </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x1 </td><td style="border: 1px solid #ccc; padding: 5px;"> byte </td><td style="border: 1px solid #ccc; padding: 5px;"> The width of the board </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Height </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2D </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2D </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x1 </td><td style="border: 1px solid #ccc; padding: 5px;"> byte </td><td style="border: 1px solid #ccc; padding: 5px;"> The height of the board </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> # of Clues </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2E </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2F </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2 </td><td style="border: 1px solid #ccc; padding: 5px;"> short </td><td style="border: 1px solid #ccc; padding: 5px;"> The number of clues for this board </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Unknown Bitmask </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x30 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x31 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2 </td><td style="border: 1px solid #ccc; padding: 5px;"> short </td><td style="border: 1px solid #ccc; padding: 5px;"> A bitmask. Operations unknown. </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Scrambled Tag </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x32 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x33 </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x2 </td><td style="border: 1px solid #ccc; padding: 5px;"> short </td><td style="border: 1px solid #ccc; padding: 5px;"> 0 for unscrambled puzzles.  Nonzero (often 4) for scrambled puzzles. </td></tr> </table></p><h2><a name="Puzzle_Layout_and_State"></a>Puzzle Layout and State<a href="#Puzzle_Layout_and_State" class="section_anchor"></a></h2><p>Next come the board solution and player state.  (If a player works on a puzzle and then saves their game, the cells they&#x27;ve filled are stored in the state.  Otherwise the state is all blank cells and contains a subset of the information in the solution.) </p><p>Boards are stored as a single string of ASCII, with one character per cell of the board beginning at the top-left and scanning in reading order, left to right then top to bottom.  We&#x27;ll use this board as a running example (where # represents a black cell, and the letters are the filled-in solution). </p><pre class="prettyprint">C A T
+# # A
+# # R</pre><p>At the end of the header (offset 0x34) comes the solution to the puzzle.  Non-playable (ie: black) cells are denoted by &#x27;.&#x27;.  So for this example, the board is stored as nine bytes: </p><pre class="prettyprint">CAT..A..R</pre><p>Next comes the player state, stored similarly.  Empty cells are stored as &#x27;-&#x27;, so the example board before any cells had been filled in is stored as:  </p><pre class="prettyprint">---..-..-</pre><h2><a name="Strings_Section"></a>Strings Section<a href="#Strings_Section" class="section_anchor"></a></h2><p>Immediately following the boards comes the strings.  All strings are encoded in ISO-8859-1 and end with a NUL.  Even if a string is empty, its trailing NUL still appears in the file.  In order, the strings are: </p><p><table class="wikitable"><tr><td style="border: 1px solid #ccc; padding: 5px;"> Description </td><td style="border: 1px solid #ccc; padding: 5px;"> Example </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Title </td><td style="border: 1px solid #ccc; padding: 5px;"> Theme: .PUZ format </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Author </td><td style="border: 1px solid #ccc; padding: 5px;"> J. Puz / W. Shortz </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Copyright </td><td style="border: 1px solid #ccc; padding: 5px;"> (c) 2007 J. Puz </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Clue#1 </td><td style="border: 1px solid #ccc; padding: 5px;"> Cued, in pool </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> ... </td><td style="border: 1px solid #ccc; padding: 5px;"> ...more clues... </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Clue#n </td><td style="border: 1px solid #ccc; padding: 5px;"> Quiet </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Notes </td><td style="border: 1px solid #ccc; padding: 5px;"> <a href="http://mywebsite" rel="nofollow">http://mywebsite</a> </td></tr> </table></p><p>These first three example strings would appear in the file as the following, where \0 represents a NUL: </p><pre class="prettyprint">Theme: .PUZ format\0J. Puz / W. Shortz\0(c) 2007 J. Puz\0</pre><p>In <a href="http://rexwordpuzzle.blogspot.com/2010/02/german-border-river-wed-2-17-10-she.html" rel="nofollow">some</a> <a href="http://rexwordpuzzle.blogspot.com/2010/02/cousin-of-boubou-thursday-feb-4-2010.html" rel="nofollow">NYT</a> <a href="http://rexwordpuzzle.blogspot.com/2010/01/like-unfortunate-torero-monday-jan-25.html" rel="nofollow">puzzles</a>, a &quot;Note&quot; has been included in the title instead of using the designated notes field.  In all the examples we&#x27;ve seen, the note has been separated from the title by a space (ASCII 0x20) and begins with the string &quot;NOTE:&quot; or &quot;Note:&quot;.  It&#x27;s not known if this is flagged anywhere else in the file.  It doesn&#x27;t seem that Across Lite handles these notes - they are just included with the title (which looks ugly). </p><p>The clues are arranged numerically.  When two clues have the same number, the Across clue comes before the Down clue. </p><h1><a name="Clue_Assignment"></a>Clue Assignment<a href="#Clue_Assignment" class="section_anchor"></a></h1><p>Nowhere in the file does it specify which cells get numbers or which clues correspond to which numbers.  These are instead derived from the shape of the puzzle. </p><p>Here&#x27;s a sketch of one way to assign numbers and clues to cells.  First, some helper functions: </p><pre class="prettyprint"># Returns true if the cell at (x, y) gets an &quot;across&quot; clue number.
+def cell_needs_across_number(x, y):
+  # Check that there is no blank to the left of us
+  if x == 0 or is_black_cell(x-1, y):
+    # Check that there is space (at least two cells) for a word here
+    if x+1 &lt; width and is_black_cell(x+1):
+      return True 
+  return False
+
+def cell_needs_down_number(x, y):
+  # ...as above, but on the y axis</pre><p>And then the actual assignment code: </p><pre class="prettyprint"># An array mapping across clues to the &quot;clue number&quot;.
+# So across_numbers[2] = 7 means that the 3rd across clue number
+# points at cell number 7.
+across_numbers = []
+
+cur_cell_number = 1
+
+# Iterate through th 
+for y in 0..height:
+  for x in 0..width:
+    if is_black_cell(x, y):
+      continue
+
+    assigned_number = False
+    if cell_needs_across_number(x, y):
+      across_numbers.append(cur_cell_number)
+      cell_numbers[x][y] = cell_number
+      assigned_number = True
+    if cell_needs_down_number(x, y):
+      # ...as above, with &quot;down&quot; instead
+    if assigned_number:    
+      cell_number += 1</pre><h1><a name="Checksums"></a>Checksums<a href="#Checksums" class="section_anchor"></a></h1><p>The file format uses a variety of checksums. </p><p>The checksumming routine used in PUZ is a variant of CRC-16. To checksum a region of memory, the following is used: </p><pre class="prettyprint">unsigned short cksum_region(unsigned char *base, int len,
+                            unsigned short cksum) {
+  int i;
+
+  for (i = 0; i &lt; len; i++) {
+    if (cksum &amp; 0x0001)
+      cksum = (cksum &gt;&gt; 1) + 0x8000;
+    else
+      cksum = cksum &gt;&gt; 1;
+    cksum += *(base+i);
+  }
+                    
+  return cksum;
+}</pre><p>The CIB checksum (which appears as its own field in the header as well as elsewhere) is a checksum over eight bytes of the header starting at the board width: </p><pre class="prettyprint">c_cib = cksum_region(data + 0x2C, 8, 0);</pre><p>The primary board checksum uses the CIB checksum and other data: </p><pre class="prettyprint">cksum = c_cib;
+cksum = cksum_region(solution, w*h, cksum);
+cksum = cksum_region(grid, w*h, cksum);
+
+if (strlen(title) &gt; 0)
+  cksum = cksum_region(title, strlen(title)+1, cksum);
+
+if (strlen(author) &gt; 0)
+  cksum = cksum_region(author, strlen(author)+1, cksum);
+
+if (strlen(copyright) &gt; 0)
+  cksum = cksum_region(copyright, strlen(copyright)+1, cksum);
+
+for(i = 0; i &lt; num_of_clues; i++)
+  cksum = cksum_region(clue[i], strlen(clue[i]), cksum);
+
+if (strlen(notes) &gt; 0)
+  cksum = cksum_region(notes, strlen(notes)+1, cksum);</pre><h2><a name="Masked_Checksums"></a>Masked Checksums<a href="#Masked_Checksums" class="section_anchor"></a></h2><p>The values from 0x10-0x17 are a real pain to generate. They are the result of masking off and XORing four checksums; 0x10-0x13 are the low bytes, while 0x14-0x17 are the high bytes. </p><p>To calculate these bytes, we must first calculate four checksums: </p><ol><li>CIB Checksum: </li><blockquote><tt>c_cib = cksum_region(CIB, 0x08, 0x0000);</tt> 
+</blockquote><li>Solution Checksum: </li><blockquote><tt>c_sol = cksum_region(solution, w*h, 0x0000);</tt> 
+</blockquote><li>Grid Checksum: </li><blockquote><tt>c_grid = cksum_region(grid, w*h, 0x0000);</tt> 
+</blockquote><li>A partial board checksum: </li><pre class="prettyprint">c_part = 0x0000;
+
+if (strlen(title) &gt; 0)
+  c_part = cksum_region(title, strlen(title)+1, c_part);
+
+if (strlen(author) &gt; 0)
+  c_part = cksum_region(author, strlen(author)+1, c_part);
+
+if (strlen(copyright) &gt; 0)
+  c_part = cksum_region(copyright, strlen(copyright)+1, c_part);
+
+for (int i = 0; i &lt; n_clues; i++)
+  c_part = cksum_region(clue[i], strlen(clue[i]), c_part);
+
+if (strlen(notes) &gt; 0)
+  c_part = cksum_region(notes, strlen(notes)+1, c_part);</pre></ol><p>Once these four checksums are obtained, they&#x27;re stuffed into the file thusly: </p><pre class="prettyprint">file[0x10] = 0x49 ^ (c_cib &amp; 0xFF);
+file[0x11] = 0x43 ^ (c_sol &amp; 0xFF);
+file[0x12] = 0x48 ^ (c_grid &amp; 0xFF);
+file[0x13] = 0x45 ^ (c_part &amp; 0xFF);
+
+file[0x14] = 0x41 ^ ((c_cib &amp; 0xFF00) &gt;&gt; 8);
+file[0x15] = 0x54 ^ ((c_sol &amp; 0xFF00) &gt;&gt; 8);
+file[0x16] = 0x45 ^ ((c_grid &amp; 0xFF00) &gt;&gt; 8);
+file[0x17] = 0x44 ^ ((c_part &amp; 0xFF00) &gt;&gt; 8);</pre><p>Note that these hex values in ASCII are the string &quot;ICHEATED&quot;. </p><h1><a name="Locked/Scrambled_Puzzles"></a>Locked/Scrambled Puzzles<a href="#Locked/Scrambled_Puzzles" class="section_anchor"></a></h1><p>The header contains two pieces related to scrambled puzzles.  The short at 0x32 records whether the puzzle is scrambled.  If it is scrambled, the short at 0x1E is a checksum suitable for verifying an attempt at unscrambling.  If the correct solution is laid out as a string in column-major order, omitting black squares, then 0x1E contains  cksum_region(string,0x0000). </p><h2><a name="Scrambling_Algorithm"></a>Scrambling Algorithm<a href="#Scrambling_Algorithm" class="section_anchor"></a></h2><p>The algorithm used to scramble the puzzles, discovered by Mike Richards, is documented in his comments below.  Eventually, they will be migrated to the main body of the document. </p><h1><a name="Extra_Sections"></a>Extra Sections<a href="#Extra_Sections" class="section_anchor"></a></h1><p>The known extra sections are: </p><p><table class="wikitable"><tr><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Section Name</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Description</strong> </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> GRBS </td><td style="border: 1px solid #ccc; padding: 5px;"> where rebuses are located in the solution </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> RTBL </td><td style="border: 1px solid #ccc; padding: 5px;"> contents of rebus squares, referred to by GRBS </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> LTIM </td><td style="border: 1px solid #ccc; padding: 5px;"> timer data </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> GEXT </td><td style="border: 1px solid #ccc; padding: 5px;"> circled squares, incorrect and given flags </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> RUSR </td><td style="border: 1px solid #ccc; padding: 5px;"> user-entered rebus squares </td></tr> </table></p><p>In official puzzles, the sections always seem to come in this order, when they appear.  It is not known if the ordering is guaranteed.  The GRBS and RTBL sections appear together in puzzles with rebuses.  However, sometimes a GRBS section with no rebus squares appears without an RTBL, especially in puzzles that have additional extra sections. </p><p>The extra sections all follow the same general format, with variation in the data they contain.  That format is: </p><p><table class="wikitable"><tr><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Component</strong> </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Length</strong> (bytes) </td><td style="border: 1px solid #ccc; padding: 5px;"> <strong>Description</strong> </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Title </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x04 </td><td style="border: 1px solid #ccc; padding: 5px;"> The name of the section, these are given in the previous table </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Length </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x02 </td><td style="border: 1px solid #ccc; padding: 5px;"> The length of the data section, in bytes, not counting the null terminator </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Checksum </td><td style="border: 1px solid #ccc; padding: 5px;"> 0x02 </td><td style="border: 1px solid #ccc; padding: 5px;"> A checksum of the data section, using the same algorithm described above </td></tr> <tr><td style="border: 1px solid #ccc; padding: 5px;"> Data </td><td style="border: 1px solid #ccc; padding: 5px;"> variable </td><td style="border: 1px solid #ccc; padding: 5px;"> The data, which varies in format but is always terminated by null and has the specified length </td></tr> </table></p><p>The format of the data for each section is described below. </p><h2><a name="GRBS"></a>GRBS<a href="#GRBS" class="section_anchor"></a></h2><p>The GRBS data is a &quot;board&quot; of one byte per square, similar to the strings for the solution and user state tables except that black squares, letters, etc. are not indicated.  The byte for each square of this board indicates whether or not that square is a rebus.  Possible values are: </p><ul><li><strong>0</strong> indicates a non-rebus square. </li><li><strong>1+n</strong> indicates a rebus square, the solution for which is given by the entry with key <strong>n</strong> in the RTBL section. </li></ul><p>If a square is a rebus, only the first letter will be given by the solution board and only the first letter of any fill will be given in the user state board. </p><h2><a name="RTBL"></a>RTBL<a href="#RTBL" class="section_anchor"></a></h2><p>The RTBL data is a string containing the solutions for any rebus squares.   </p><p>These solutions are given as an ascii string.  For each rebus there is a number, a colon, a string and a semicolon.  The number (represented by an ascii string) is always two characters long - if it is only one digit, the first character is a space.  It is the key that the GRBS section uses to refer to this entry (it is one less than the number that appears in the corresponding rebus grid squares).  The string is the rebus solution. </p><p>For example, in a puzzle which had four rebus squares containing &quot;HEART&quot;, &quot;DIAMOND&quot;, &quot;CLUB&quot;, and &quot;SPADE&quot;, the string might be: </p><pre class="prettyprint">&quot; 0:HEART; 1:DIAMOND;17:CLUB;23:SPADE;&quot;</pre><p>Note that the keys need not be consecutive numbers, but in official puzzles they always seem to be in ascending order.  An individual key may appear multiple times in the GRBS board if there are multiple rebus squares with the same solution. </p><h2><a name="LTIM"></a>LTIM<a href="#LTIM" class="section_anchor"></a></h2><p>The LTIM data section stores two pieces of information: how much time the solver has used and whether the timer is running or stopped.  The two pieces are both stored as ascii strings of numbers, separated by a comma.  First comes the number of seconds elapsed, then &quot;0&quot; if the timer is running and &quot;1&quot; if it is stopped.  For example, if the timer were stopped at 42 seconds when the puzzle was saved, the LTIM data section would contain the ascii string: </p><pre class="prettyprint">&quot;42,1&quot;</pre><p>In C, for example, if <tt>ltim</tt> were a pointer to the LTIM data section, it could be parsed with: </p><pre class="prettyprint">  int elapsed, stopped;
+
+  sscanf((char*)ltim,&quot;%d,%d&quot;,&amp;elapsed,&amp;stopped);</pre><h2><a name="GEXT"></a>GEXT<a href="#GEXT" class="section_anchor"></a></h2><p>The GEXT data section is another &quot;board&quot; of one byte per square.  Each byte is a bitmask indicating that some style attributes are set.  The meanings of four bits are known: </p><ul><li>0x10 means that the square was previously marked incorrect </li><li>0x20 means that the square is currently marked incorrect </li><li>0x40 means that the contents were given </li><li>0x80 means that the square is circled. </li></ul><p>None, some, or all of these bits may be set for each square.  It is possible that they have reserved other values. </p><h2><a name="RUSR"></a>RUSR<a href="#RUSR" class="section_anchor"></a></h2><p><i>The RUSR section is currently undocumented.</i> </p><h1><a name="What_remains"></a>What remains<a href="#What_remains" class="section_anchor"></a></h1><p>This section contains a list of pieces of the format that we haven&#x27;t yet figured or documented.  If you have, please let us know! </p><ul><li>The various unknown parts of the header, mentioned at the beginning </li><li>The algorithm used for scrambling puzzles is documented in the comments, it still needs to be integrated into the main text. </li><li>The RUSR data section format is also described in the comments but not the main text. </li></ul><p>  </p><h1><a name="Credit"></a>Credit<a href="#Credit" class="section_anchor"></a></h1><p>Most of this document is by <a href="http://joshisanerd.com" rel="nofollow">Josh Myer</a>, with some work also done by <a href="http://neugierig.org" rel="nofollow">Evan Martin</a>.  <a href="http://www.cis.upenn.edu/~ccasin" rel="nofollow">Chris Casinghino</a> added documentation of the optional extra sections, with help from <a href="http://www.cis.upenn.edu/~mgree" rel="nofollow">Michael Greenberg</a>.  The commenters below, including mrichards42@gmx.com and boisvert42, also contributed. </p>
+ </div>
+ </div>
+ </td><tr>
+</table>
+ </div>
+
+
+ 
+ <div id="wikicommentcol">
+ 
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+<div class="collapse">
+
+
+ 
+
+
+<div id="commentlist">
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/106460283823136865818/">bradley....@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Apr 24 15:38:42 2008">Apr 24, 2008</span>
+ <div>
+<div class="commentcontent">
+<p>Note that &quot;cryptic&quot; puzzles, like those found here: <a href="http://world.std.com/~wij/puzzles/cru/" rel="nofollow">http://world.std.com/~wij/puzzles/cru/</a> have a version number of 1.3 </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/109795225849178178467/">mrichard...@gmx.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Jul 21 19:02:26 2009">Jul 21, 2009</span>
+ <div>
+<div class="commentcontent">
+<p>All puzzles saved by Across Lite v2 have version 1.3, not just cryptics. </p><p>I&#x27;ve seen a version 1.2c as well as 1.2\0 . . . Perhaps the &#x27;c&#x27; means that they were saved by Crossword Compiler.  Just a guess. </p><p><strong>For version 1.3 puzzles:</strong> <ul><li>The &quot;primary&quot; and &quot;partial board&quot; checksums include the notes section. </li></ul>i.e. this goes after the calculation of each: </p><pre class="prettyprint">cksum = cksum_region(notes, strlen(notes)+1, cksum);</pre><p><strong>For all puzzles:</strong> </p><ul><li>If the title, author, copyright, or notes are blank, they don&#x27;t factor into the checksums.  This should work for all puzzles: </li><pre class="prettyprint">if (strlen(title) == 0)
+    cksum = cksum_region(&quot;&quot;, strlen(title)+1, cksum);</pre></ul><ul><li>The unknown value at 0x1e is 0x0000 in all puzzles that are not scrambled.  In scrambled puzzles, this value is a checksum for the unscrambled grid. </li><li>The values at 0x30 and 0x32 are flags that indicate what kind of puzzle we&#x27;re dealing with. </li><ul><li>The only values I&#x27;ve seen in the 0x30 number are: </li><ul><li>0x0001 = Normal puzzle </li><li>0x0401 = Diagramless puzzle </li></ul><li>And for 0x32 </li><ul><li>0x0000 = Normal puzzle </li><li>0x0002 = Scrambled solution </li><li>0x0004 = No solution (e.g if the user created a Text format puzzle and entered X for the entire solution). </li></ul></ul></ul><p>There are a pile of extra sections that can follow the grid, each with their own checksum. The general format is: <ul><li>title (4-byte string) </li><li>length (short) </li><li>checksum (short) </li><li>data </li><li>nul </li></ul></p><p><strong>Known sections (Across Lite 1):</strong> <ul><li>GEXT  -- information about incorrect flags, circles, etc. </li></ul></p><p><strong>Known sections (Across Lite 2):</strong> <ul><li>LTIM -- time </li><li>RUSR -- user rebus entries </li><li>GRBS -- solution rebus entries </li><li>RTBL -- table used to look up GRBS values </li></ul>GRBS and RTBL must be found together </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/109795225849178178467/">mrichard...@gmx.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Jul 31 13:26:51 2009">Jul 31, 2009</span>
+ <div>
+<div class="commentcontent">
+<p>Oops . . . proofreading. </p><p>That should be </p><pre class="prettyprint">if (strlen(title) != 0)
+    cksum = cksum_region(title, strlen(title)+1, cksum);</pre>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/Chris.Casinghino@gmail.com/">Chris.Casinghino@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Oct 30 14:58:04 2009">Oct 30, 2009</span>
+ <div>
+<div class="commentcontent">
+<p>Note also that GRBS sometimes occurs without RTBL in puzzles that have no rebus squares.  I&#x27;ve only observed this in puzzles that also have other sections, where it is common. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/106202397546486398380/">boisver...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Nov  6 16:18:13 2009">Nov 6, 2009</span>
+ <div>
+<div class="commentcontent">
+<p>A few more details: </p><ol><li>If there&#x27;s a notepad, this will affect the checksum.  The primary checksum and c_part checksums then need to be updated via </li><pre class="prettyprint">cksum = cksum_region(notepad, strlen(notepad)+1, cksum);
+c_part = cksum_region(notepad, strlen(notepad)+1, c_part);</pre><li>&quot;Unknown32&quot; is a short that tells Across Lite whether the solution is scrambled.  In an unscrambled puzzle it is 0, otherwise nonzero (usually 4) </li><li>If the puzzle is scrambled, then &quot;Unknown&quot; is a checksum of the puzzle solution.  Specifically, if the (unscrambled) solution is laid out in a string in column-major order with all black squares removed, then &quot;Unknown&quot; equals cksum_region(solution,0x0000). </li></ol><p>Love the site!  Let&#x27;s hope we can get this fully documented. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/109795225849178178467/">mrichard...@gmx.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Nov 17 16:19:10 2009">Nov 17, 2009</span>
+ <div>
+<div class="commentcontent">
+<p>This is approximately the scrambling code: </p><pre class="prettyprint">def scramble(solution, key):
+    &quot;&quot;&quot;
+    Solution is the puzzle&#x27;s solution as a string running down instead of across:    
+    i.e. if the puzzle is:
+        C A T
+        # # A
+        # # R
+    solution is C..A..TAR    
+
+    Key is a list of 4 digits
+
+    &quot;&quot;&quot;
+    scrambled = solution
+
+    for key_num in key:
+        last_scramble = scrambled
+        scrambled = &#x27;&#x27;
+
+        for i, letter in enumerate(last_scramble):
+            letter_val = ord(letter) + key[i % 4]
+
+            # Make sure this letter is a capital letter
+            if letter_val &gt; 90:
+                letter_val -= 26
+
+            scrambled += chr(letter_val)
+
+        scrambled = shift_string(scrambled, key_num)
+        scrambled = scramble_string(scrambled)
+
+def shift_string(scrambled, num):
+    return scrambled[num:] + scrambled[:num]
+
+def scramble_string(scrambled):
+    # Split the string in half
+    mid = len(scrambled) / 2
+    front = scrambled[:mid]
+    back  = scrambled[mid:]
+
+    # Assemble the parts:
+    # back[0], front[0], back[1], front[1] . . .
+    return_str = &#x27;&#x27;
+    for f, b in zip(front, back):
+        return_str += b + f
+
+    # If len(scrambled) is odd, the last character got left off
+    if len(scrambled) % 2 != 0:
+        return_str += back[-1]
+
+    return return_str
+</pre><p>It&#x27;s a rough translation of the C++ code from <a href="http://wx-xword.svn.sourceforge.net/viewvc/wx-xword/trunk/src/puz/Scrambler.cpp" rel="nofollow">http://wx-xword.svn.sourceforge.net/viewvc/wx-xword/trunk/src/puz/Scrambler.cpp</a> (That is a crossword puzzle program I&#x27;ve been working on for a while isn&#x27;t a plug at all<a href="/p/puz/w/edit/This">?</a>.  Anything I know about the format is somewhere is the source code tree for that project, and it&#x27;s decently documented). </p><p>More later on the RTBL format. </p><p>Mike </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/109795225849178178467/">mrichard...@gmx.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Nov 18 13:06:38 2009">Nov 18, 2009</span>
+ <div>
+<div class="commentcontent">
+<p>(I meant &quot;More later on the RUSR format . . .) </p><p><strong>RUSR:</strong> A &quot;grid&quot; of nul-terminated strings representing the user-entered rebus squares.  If the user entry for a square is a symbol, the entry is a number enclosed in square braces. </p><p><strong>Scrambling:</strong> It&#x27;s been a while since I wrote the scrambling code, so the above translation has the following error: the input string does not include black squares. Thus, if the crossword puzzle grid were: </p><pre class="prettyprint">ABC
+##D
+EFG</pre><p>The input to the scrambling function would be  <tt>&#x27;AEBFCDG&#x27;</tt> The resulting scrambled solution is then put in place of the real solution (again, running down instead of across) in the puzzle file after re-inserting the black squares. </p><p>e.g. Scramble the puzzle above with key 1234 </p><pre class="prettyprint">scramble(&#x27;AEBFCDG&#x27;, [1,2,3,4]) -&gt; &#x27;MLOOPKJ&#x27;</pre><p>Thus the solution grid would turn into  </p><pre class="prettyprint">MOP
+##K
+LOJ</pre><p>The unscrambling algorithm is, naturally, exactly the opposite of the scrambling algorithm. </p><p>There are only so many possible keys (keys must be 4-digit numbers and cannot start with 0), so a brute-force approach to unscrambling puzzles shouldn&#x27;t take too long. </p><p>But that takes the fun out of the puzzle!  More interesting to me is the fact that (as has been noted) the unknown32 value is a checksum of the unscrambled puzzle.  Across Lite won&#x27;t tell you if a locked/scrambled puzzle is solved correctly, but it&#x27;s a simple matter to checksum the user-entered grid to see if the puzzle is solved correctly. </p><p>Mike </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/111839890510274932538/">adejarn...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Sep 29 11:05:30 2011">Sep 29, 2011</span>
+ <div>
+<div class="commentcontent">
+<p>Thanks for providing this, it&#x27;s very useful. I have posted a python implementation of the format here: <a href="http://github.com/alexdej/puzpy" rel="nofollow">http://github.com/alexdej/puzpy</a>. It is fairly robust -- I have tested it on over 10,000 .puz files from various sources. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+</div>
+</div>
+
+ 
+
+
+ <script type="text/javascript">
+ function delComment(sequence_num, create_time, delete_mode) {
+ var f = document.forms["delcom"];
+ f.sequence_num.value = sequence_num;
+ f.create_time.value = create_time;
+ f.mode.value = delete_mode;
+ f.submit();
+ return false;
+ }
+ </script>
+
+
+ </div>
+ 
+ 
+ 
+ 
+ <br>
+ <div class="artifactcomment">
+ <span class="indicator">&#9658;</span> <a href="https://www.google.com/accounts/ServiceLogin?service=code&amp;ltmpl=phosting&amp;continue=https%3A%2F%2Fcode.google.com%2Fp%2Fpuz%2Fwiki%2FFileFormat&amp;followup=https%3A%2F%2Fcode.google.com%2Fp%2Fpuz%2Fwiki%2FFileFormat"
+ >Sign in</a> to add a comment
+ </div>
+ 
+ 
+ 
+ 
+ <form name="delcom" action="../w/delComment.do" method="POST">
+ <input type="hidden" name="sequence_num" value="" >
+ <input type="hidden" name="create_time" value="" >
+ <input type="hidden" name="mode" value="" >
+ <input type="hidden" name="pagename" value="FileFormat" >
+ <input type="hidden" name="token" value="" >
+ </form>
+
+
+ <script src="https://ssl.gstatic.com/codesite/ph/16186173366037945081/js/prettify/prettify.js"></script>
+ <script type="text/javascript">
+ prettyPrint();
+ </script>
+
+<script type="text/javascript" src="https://ssl.gstatic.com/codesite/ph/16186173366037945081/js/dit_scripts.js"></script>
+
+
+
+  
+ 
+ 
+ <script type="text/javascript" src="https://ssl.gstatic.com/codesite/ph/16186173366037945081/js/ph_core.js"></script>
+ 
+ <script type="text/javascript" src="https://ssl.gstatic.com/codesite/ph/16186173366037945081/js/ph_dwiki.js"></script>
+ 
+ 
+ 
+ 
+</div> 
+
+<div id="footer" dir="ltr">
+ <div class="text">
+ <a href="/projecthosting/terms.html">Terms</a> -
+ <a href="http://www.google.com/privacy.html">Privacy</a> -
+ <a href="/p/support/">Project Hosting Help</a>
+ </div>
+</div>
+ <div class="hostedBy" style="margin-top: -20px;">
+ <span style="vertical-align: top;">Powered by <a href="http://code.google.com/projecthosting/">Google Project Hosting</a></span>
+ </div>
+
+ 
+ 
+
+
+ 
+ </body>
+</html>
+
+
