@@ -32,6 +32,8 @@ class Puz
   attr_accessor :clues
   attr_accessor :notes
 
+  attr_accessor :extras # hash keyed on extra cmd (GRBD|RTBL|LTIM|GEXT|RUSR)
+
   def initialize
   end
 
@@ -86,19 +88,28 @@ ap p
     @solution = io.read(@width * @height)
     @state = io.read(@width * @height)
 
-    @clues = []
-    extra = nil
-    io.read.force_encoding('ISO-8859-1').split("\0").each_with_index do |s,i|
-      puts "#{i}:#{s}"
-      case i
-        when 0; @title = s
-        when 1; @author = s
-        when 2; @copyright = s
-        when 3..(3+@n_clues-1); @clues << s
-        when 3+@n_clues; @notes = s
-        else
-      end
+    @title = read_string io
+    @author = read_string io
+    @copyright = read_string io
+    @clues = @n_clues.times.map { read_string io }
+    @notes = read_string io
+
+    @extras = {}
+    while (extra_title = io.read(4))
+      extra = PuzExtra.new extra_title
+      extra.length = io.read(2).unpack('v')[0]
+      extra.checksum = io.read(2).unpack('v')[0]
+      extra.data = io.read(extra.length + 1)
+      @extras[extra_title] = extra
     end
+  end
+
+  def read_string io
+    buf = ''
+    while (c = io.read(1)) != "\0"
+      buf += c
+    end
+    buf
   end
 
   def verify
@@ -146,6 +157,17 @@ ap p
     raise "Bad masked high checksums:#{hi} vs orig:#{@masked_high_checksums}" unless
       hi == @masked_high_checksums
     puts "Masked high checksum is good:#{hi}"
+
+    # Extras
+    @extras.each_pair do |title,e|
+      raise "Bad length for extra:#{title}, length:#{e.data.length} expected:#{e.length}" unless
+        e.data.length == e.length + 1
+      puts "Extra:#{e.title} length is good:#{e.length}"
+      cs = checksum e.data[0..-2] # data was read with \0, so strip for checksum
+      raise "Bad extra:#{e.title} checksum:#{cs} expected:#{e.checksum}" unless
+        cs == e.checksum
+      puts "Extra:#{e.title} checksum is good:#{cs}"
+    end
   end
 
   # https://code.google.com/p/puz/wiki/FileFormat#Checksums
@@ -161,4 +183,8 @@ class PuzExtra
   attr_accessor :length
   attr_accessor :checksum
   attr_accessor :data
+
+  def initialize title
+    @title = title
+  end
 end
