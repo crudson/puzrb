@@ -9,6 +9,9 @@ module Puzrb
     end
   end
 
+  # Encapsulated a puzzle.
+  # Provides ability to load (and validate) and write.
+  # Provides full editing and checking of puzzle.
   class Puzzle
     include Checksum
 
@@ -47,9 +50,13 @@ module Puzrb
 
     attr_accessor :extras # hash keyed on extra cmd (GRBD|RTBL|LTIM|GEXT|RUSR)
 
+    # See #method_missing for how COLORS are used to colorify output.
+    COLORS = %w(black red green yellow blue magenta cyan white)
+
     def initialize
     end
 
+    # Load, verify and set up puzzle state.
     def self.load io
       p = Puzzle.new
       p._load io
@@ -112,6 +119,7 @@ module Puzrb
 
       # To solve we need a GEXT to set bit masks if squares are indicated as incorrect etc.
       # If we didn't have it in the file then create it.
+      # TODO: create an empty GEXT if it was missing.
     end
 
     def read_string io
@@ -122,6 +130,7 @@ module Puzrb
       buf
     end
 
+    # Check integrity of puzzle (lengths, checksums, cross-referenced elements).
     def verify
       # n clues
       raise "Wrong number of clues:#{@clues.length} expected:#{@n_clues}" unless @clues.length == @n_clues
@@ -171,7 +180,7 @@ module Puzrb
       # Extras
       @extras.each_pair { |name,e| e.validate }
 
-      # Check any rebuses referenced in GRBS match with RTBL
+      # TODO: Check any rebuses referenced in GRBS match with RTBL
     end
 
     # 1. Map each cell to:
@@ -214,14 +223,17 @@ module Puzrb
       end
     end
 
+    # row,col -> index
     def rc2idx r, c
       r * @width + c
     end
 
+    # index -> row,col
     def idx2rc idx
       [idx / @width, idx % @width]
     end
 
+    # Is row,col a black square in the grid definition?
     def is_black? r, c
       solution_letter_at(r,c) == '.'
     end
@@ -236,7 +248,8 @@ module Puzrb
       @state[rc2idx(r, c)]
     end
 
-    # TODO: handle symbols and rebuses
+    # Set letter in current state.
+    # TODO: handle symbols and rebuses (separate method?)
     def set_letter_at r, c, l
       l = l[0].upcase
       if (65..90).include? l.ord
@@ -247,11 +260,12 @@ module Puzrb
       end
     end
 
+    # Whether the given row,col is a letter (rather than outside the grid or a black square).
     def is_letter? r, c
       ! (is_black?(r, c) || r < 0 || r >= @height || c < 0 || c >= @width)
     end
 
-    # Check entered letter at row,col and set corresponding flag in GEXT extra if applicable.
+    # Check entered letter at row,col and set corresponding flag in GEXT if applicable.
     # Returns true if state letter matches solution, false otherwise.
     def check_letter r, c
       if ! is_letter? r, c
@@ -266,7 +280,7 @@ module Puzrb
     end
 
     # Check whole word that spans letter at row,col for direction dir (:accross|:down), and
-    # set corresponding flags in GEXT extra if applicable.
+    # sets corresponding flags in GEXT if applicable.
     # Returns true if state word matches solution, false otherwise.
     def check_word r, c, dir
       raise "Bad direction:#{dir.inspect}" unless [:across, :down].include?(dir)
@@ -279,7 +293,7 @@ module Puzrb
       }
     end
 
-    # Check entire grid and set corresponding flags in GEXT extra if applicable.
+    # Check entire grid and set corresponding flags in GEXT if applicable.
     # TODO: return true|false
     def check_all
       (0..@height).each do |r|
@@ -301,22 +315,27 @@ module Puzrb
       }
     end
 
+    # convenience method for GRBS extra
     def grbs
       @extras['GRBS']
     end
 
+    # convenience method for RTBL extra
     def rtbl
       @extras['RTBL']
     end
 
+    # convenience method for LTIM extra
     def ltim
       @extras['LTIM']
     end
 
+    # convenience method for GEXT extra
     def gext
       @extras['GEXT']
     end
 
+    # convenience method for RUSR extra
     def rusr
       @extras['RUSR']
     end
@@ -329,6 +348,7 @@ module Puzrb
       puts @state.scan(/.{#{@width}}/)
     end
 
+    # Print state with colors corresponding to state flags.
     def print_state_ext
       (0...@height).each do |r|
         (0...@width).each do |c|
@@ -349,20 +369,10 @@ module Puzrb
       end
     end
 
+    # Provides convenience ghost methods for color printing.
     def method_missing sym, args
       if sym.id2name =~ /^print_([a-z]+)$/
-        color = case $1
-                when 'red'
-                  '31'
-                when 'green'
-                  '32'
-                when 'yellow'
-                  '33'
-                when 'magenta'
-                  '35'
-                else
-                  '37'
-                end
+        color = (COLORS.index($1) || 7) + 30 # defaults to white
         print "\u001B[#{color}m#{args}\u001B[m"
       else
         super
@@ -370,6 +380,7 @@ module Puzrb
     end
   end
 
+  # Base class for extra sections.
   class PuzExtra
     include Checksum
 
@@ -402,13 +413,14 @@ module Puzrb
     end
 
     # Return 'data'.
-    # Subclasses must keep their 'data' up to date when their state is changed.
+    # Subclasses *must* keep their 'data' up to date when their state is changed.
     def serialize
       puts "#{checksum} -> #{chksum(data[0..-2])}"
       name + [length, chksum(data[0..-2])].pack('vv') + data
     end
   end
 
+  # Where rebuses are located in the puzzle.
   class GRBS < PuzExtra
     def data= data
       super
@@ -429,10 +441,12 @@ module Puzrb
       r > 0 ? r - 1 : r
     end
 
+    # Print whole grid showing rebus numbers.
     def print_board
       puts @board.map { |s| s.to_s(16).rjust(2, '0') }.join.scan(/.{#{@puz.width * 2}}/)
     end
 
+    # Set rebus number for the given row,col.
     def set_rebus_n r, c, rebus_n
       @board[r * @puz.width + c] = rebus_n + 1
       @data = @board.pack('C*') + '\0'
@@ -440,6 +454,8 @@ module Puzrb
     end
   end
 
+  # Rebuses in the solution.
+  # Rebus numbers in GBRS must correspond to numbers here (-1).
   class RTBL < PuzExtra
     def data= data
       super
@@ -464,6 +480,7 @@ module Puzrb
     end
   end
 
+  # Timer information.
   class LTIM < PuzExtra
     attr_accessor :time_elapsed
 
@@ -496,6 +513,7 @@ module Puzrb
     end
   end
 
+  # Flags for squares in the current state.
   class GEXT < PuzExtra
     PREV_INCORRECT = 0x10 # square was previously marked incorrect
     CURR_INCORRECT = 0x20 # square is currently marked incorrect
@@ -544,6 +562,7 @@ module Puzrb
     end
   end
 
+  # User entered values for rebus squares.
   class RUSR < PuzExtra
     def data= data
       super
