@@ -214,7 +214,7 @@ module Puzrb
             elsif r < @height - 1 && !is_black?(r+1, c) # have white below, start of down
               val[:down] = @down_clues.length
               val[:is_down_start] = true
-              # Increment global clue # only if we didn't start an across clue
+              # Increment global clue iff we didn't start an across clue
               @down_clues << [clue_idx += 1, val[:is_across_start] ? global_clue_n : global_clue_n += 1]
             end
             @clue_map[rc2idx(r, c)] = val
@@ -249,7 +249,6 @@ module Puzrb
     end
 
     # Set letter in current state.
-    # TODO: handle symbols and rebuses (separate method?)
     def set_letter_at r, c, l
       l = l[0].upcase
       if (65..90).include? l.ord
@@ -258,6 +257,11 @@ module Puzrb
           gext.set_mask r, c, GEXT::PREV_INCORRECT
         end
       end
+    end
+
+    # Set rebus string 's' at row,col.
+    def set_rebus_at r, c, s
+      
     end
 
     # Whether the given row,col is a letter (rather than outside the grid or a black square).
@@ -313,6 +317,27 @@ module Puzrb
         r, c = idx2rc i
         letter_at r, c
       }
+    end
+
+    # Scrambled current state with the given 4-digit key.
+    def scramble key
+      # solution is the completed grid column-wise rather than the normal row-wise, with
+      # black squares removed.
+      sol = (0...@width).map do |c|
+        (0...@height).map do |r|
+          is_black?(r, c) ? nil : letter_at(r, c)
+        end.compact
+      end.join
+
+      sol = key.to_s.split('').reduce(sol) do |cur_sol,k|
+        cur_sol = cur_sol.to_s.map.with_index do |s,i|
+          l = s.ord + key[i % 4]
+          l > 90 ? l - 26 : l
+        end
+        cur_sol.rotate! k
+        mid = cur_sol.length / 2
+        cur_sol[mid..-1].split('').zip(cur_sol[0,mid].split('')).join
+      end
     end
 
     # convenience method for GRBS extra
