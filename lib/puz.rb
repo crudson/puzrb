@@ -50,7 +50,7 @@ module Puzrb
 
     attr_accessor :extras # hash keyed on extra cmd (GRBD|RTBL|LTIM|GEXT|RUSR)
 
-    # See #method_missing for how COLORS are used to colorify output.
+    # See #method_missing for how COLORS are used to colorify output with ghost methods.
     COLORS = %w(black red green yellow blue magenta cyan white)
 
     def initialize
@@ -119,6 +119,9 @@ module Puzrb
 
       # To solve we need a GEXT to set bit masks if squares are indicated as incorrect etc.
       # If we didn't have it in the file then create it.
+      # TODO: probably only have this if puzzle is edited and any masks are set.
+      #       this will ensure bindary compatability with reading then writing, and
+      #       match what AcrossLite does.
       if gext.nil?
         puts "WARNING: no GEXT in puzzle, creating blank"
         @extras['GEXT'] = g = GEXT.new self
@@ -187,7 +190,9 @@ module Puzrb
       @extras.each_pair { |name,e| e.verify }
 
       if grbs.nil?
-        puts "WARNING: no GRBS"
+        # No warning needed here
+      elsif rtbl.nil?
+        puts "WARNING: have GRBS but no RTBL"
       else
         # Check any rebuses referenced in GRBS match with RTBL
         sol_rebuses = [] # to see if there are any defined which aren't referenced in the solution
@@ -261,12 +266,19 @@ module Puzrb
       [idx / @width, idx % @width]
     end
 
+    # Is the puzzle scrambled?
+    def is_scrambled?
+      @scrambled_checksum > 0
+    end
+
     # Is row,col a black square in the grid definition?
     def is_black? r, c
       solution_letter_at(r,c) == '.'
     end
 
     # Get letter from solution
+    # Note that if the puzzle is scrambled this will simply return the scrambled letter,
+    # not the true solution letter.
     def solution_letter_at r, c
       @solution[rc2idx(r, c)]
     end
@@ -274,6 +286,32 @@ module Puzrb
     # Get letter from current state
     def letter_at r, c
       @state[rc2idx(r, c)]
+    end
+
+    # Get solution word that the given square is part of, with respect to the given direction.
+    # Note that if the puzzle is scrambled this will simply return the scrambled word,
+    # not the true solution word.
+    def solution_word_at r, c, dir
+      raise "Bad direction:#{dir.inspect}" unless [:across, :down].include?(dir)
+      # get which clue r,c is for
+      letter = @clue_map[r * @width + c]
+      # get all squares which are the same word for the given direction
+      @clue_map.select { |i,c| c[dir] == letter[dir] }.map { |i,c|
+        r, c = idx2rc i
+        solution_letter_at r, c
+      }.join
+    end
+
+    # Get word that the given square is part of, with respect to the given direction.
+    def word_at r, c, dir
+      raise "Bad direction:#{dir.inspect}" unless [:across, :down].include?(dir)
+      # get which clue r,c is for
+      letter = @clue_map[r * @width + c]
+      # get all squares which are the same word for the given direction
+      @clue_map.select { |i,c| c[dir] == letter[dir] }.map { |i,c|
+        r, c = idx2rc i
+        letter_at r, c
+      }.join
     end
 
     # Set letter in current state.
@@ -299,7 +337,12 @@ module Puzrb
 
     # Check entered letter at row,col and set corresponding flag in GEXT if applicable.
     # Returns true if state letter matches solution, false otherwise.
+    #
+    # If the puzzle is scrambled, this returns nil, and no flags are set.
+    # A single letter can't be checked against the true scrambled solution.
     def check_letter r, c
+      return nil if is_scrambled?
+
       if ! is_letter? r, c
         raise "Bad row:#{r},col:#{c}"
       end
@@ -314,7 +357,12 @@ module Puzrb
     # Check whole word that spans letter at row,col for direction dir (:accross|:down), and
     # sets corresponding flags in GEXT if applicable.
     # Returns true if state word matches solution, false otherwise.
+    #
+    # If the puzzle is scrambled, this returns nil, and no flags are set.
+    # A single letter (and therefore words) can't be checked against the true scrambled solution.
     def check_word r, c, dir
+      return nil if is_scrambled?
+
       raise "Bad direction:#{dir.inspect}" unless [:across, :down].include?(dir)
       # get which clue mapping r,c is for
       letter = @clue_map[rc2idx(r, c)]
@@ -326,25 +374,18 @@ module Puzrb
     end
 
     # Check entire grid and set corresponding flags in GEXT if applicable.
-    # TODO: return true|false
+    #
+    # If the puzzle is scrambled, this returns true or false, but no GEXT flags are set
+    # either way.
     def check_all
-      (0..@height).each do |r|
-        (0..@width).each do |c|
-          check_letter r, c
-        end
+      if is_scrambled?
+        # TODO
       end
-    end
-
-    # Get word that the given square is part of, with respect to the given direction.
-    def get_word r, c, dir
-      raise "Bad direction:#{dir.inspect}" unless [:across, :down].include?(dir)
-      # get which clue r,c is for
-      letter = @clue_map[r * @width + c]
-      # get all squares which are the same word for the given direction
-      @clue_map.select { |i,c| c[dir] == letter[dir] }.map { |i,c|
-        r, c = idx2rc i
-        letter_at r, c
-      }
+      (0...@height).map do |r|
+        (0...@width).map do |c|
+          is_letter?(r,c) ? check_letter(r,c) : nil
+        end
+      end.flatten.compact.all? { |e| !!e } # if we have all 'true' squares then solution is correct
     end
 
     # Scrambled current state with the given 4-digit key.
@@ -422,6 +463,33 @@ module Puzrb
       end
     end
 
+    def zstring s
+      "#{s}\0"
+    end
+
+    def write file
+      open(file, 'w') { |o| o.write serialize }
+    end
+
+    # Binary form of puzzle
+    def serialize
+      out = @start_junk +
+        [@checksum, @file_magic, @cib_checksum].pack('vZ12v') +
+        [@masked_low_checksums, @masked_high_checksums].pack('H8H8') +
+        [@version, @reserved_1c, @scramble_checksum, @reserved_20].pack('Z*Z2Z2Z12') +
+        [@width, @height, @n_clues, @bitmask, @scrambled_tag].pack('CCvvv') +
+        @solution + @state +
+        [@title, @author, @copyright].map { |s| zstring s }.join +
+        @clues.map { |s| zstring s }.join +
+        zstring(@notes) # TODO: only do this for >v1.3
+      %w(GRBS RTBL LTIM GEXT RUSR).each do |e|
+        if ex = @extras[e]
+          out += ex.serialize
+        end
+      end
+      out
+    end
+
     # Provides convenience ghost methods for color printing.
     def method_missing sym, args
       if sym.id2name =~ /^print_([a-z]+)$/
@@ -434,6 +502,7 @@ module Puzrb
   end
 
   # Base class for extra sections.
+  # TODO: move to separate source file.
   class PuzExtra
     include Checksum
 

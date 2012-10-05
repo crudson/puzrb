@@ -6,7 +6,7 @@ ARGV.each do |f|
   puts "Loading #{f}"
   p = Puzrb::Puzzle.load open(f)
   puts "Loaded #{f}\n\n"
-  ap p
+#  ap p
   #p.print_solution
   #p.print_state
   puts "\n\n"
