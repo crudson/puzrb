@@ -9,8 +9,8 @@ module Puzrb
     end
   end
 
-  # Encapsulated a puzzle.
-  # Provides ability to load (and validate) and write.
+  # Encapsulates a puzzle.
+  # Provides ability to load (and verify) and write.
   # Provides full editing and checking of puzzle.
   class Puzzle
     include Checksum
@@ -66,7 +66,7 @@ module Puzrb
     end
 
     # Read in a .puz file
-    # This does not validate the integrity of the data with respect to checksums.
+    # This does not verify the integrity of the data with respect to checksums.
     # see #verify
     def _load io
       @raw = io.read #.unpack('v*')
@@ -119,7 +119,13 @@ module Puzrb
 
       # To solve we need a GEXT to set bit masks if squares are indicated as incorrect etc.
       # If we didn't have it in the file then create it.
-      # TODO: create an empty GEXT if it was missing.
+      if gext.nil?
+        puts "WARNING: no GEXT in puzzle, creating blank"
+        @extras['GEXT'] = g = GEXT.new self
+        g.blank!
+        # force a serialize so that it passes verification by setting length and checksum
+        g.serialize
+      end
     end
 
     def read_string io
@@ -178,9 +184,31 @@ module Puzrb
       puts "Masked high checksum is good:#{hi}"
 
       # Extras
-      @extras.each_pair { |name,e| e.validate }
+      @extras.each_pair { |name,e| e.verify }
 
-      # TODO: Check any rebuses referenced in GRBS match with RTBL
+      if grbs.nil?
+        puts "WARNING: no GRBS"
+      else
+        # Check any rebuses referenced in GRBS match with RTBL
+        sol_rebuses = [] # to see if there are any defined which aren't referenced in the solution
+        (0...@height).each do |r|
+          (0...@width).each do |c|
+            r_n = grbs.rebus_n_at r, c
+            if r_n > 0
+              if (reb = rtbl.rebus_for_n(r_n)) == nil
+                raise "Rebus n:#{r_n} has no matching definition"
+              else
+                sol_rebuses << r_n
+              end
+            end
+          end
+        end
+        reb_unused = rtbl.rebuses.reject! { |r| sol_rebuses.include? r[:n] }
+        if ! reb_unused.empty?
+          puts "WARNING: the following rebuses are defined but not referenced in the solution:",
+          reb_unused.inspect
+        end
+      end
     end
 
     # 1. Map each cell to:
@@ -427,7 +455,7 @@ module Puzrb
       self.class.name.split('::')[-1]
     end
 
-    def validate
+    def verify
       raise "Bad length for extra:#{name}, length:#{data.length} expected:#{length}" unless
         data.length == length + 1
       puts "Extra:#{name} length is good:#{length}"
@@ -437,10 +465,18 @@ module Puzrb
       puts "Extra:#{name} checksum is good:#{cs}"
     end
 
-    # Return 'data'.
-    # Subclasses *must* keep their 'data' up to date when their state is changed.
+    # Subclasses must implement this.
+    def serialize_data
+      raise NotImplementedError
+    end
+
+    # Pack contents.
+    # Updates checksum and length.
+    # #serialize_data will be called first, so ensure it's implemented.
     def serialize
-      puts "#{checksum} -> #{chksum(data[0..-2])}"
+      serialize_data
+      @length = data[0..-2].length
+      @checksum = chksum data[0..-2]
       name + [length, chksum(data[0..-2])].pack('vv') + data
     end
   end
@@ -474,8 +510,10 @@ module Puzrb
     # Set rebus number for the given row,col.
     def set_rebus_n r, c, rebus_n
       @board[r * @puz.width + c] = rebus_n + 1
+    end
+
+    def serialize_data
       @data = @board.pack('C*') + '\0'
-      @length = @data.length
     end
   end
 
@@ -494,6 +532,12 @@ module Puzrb
       @rebuses.find { |r| r[:n] == n }
     end
 
+    # Return all rebuses.
+    # Clone to restrict mutability to this class.
+    def rebuses
+      @rebuses.clone
+    end
+
     def set_rebus_for_n n, val
       current = rebus_for_n n
       if current
@@ -501,7 +545,10 @@ module Puzrb
       else
         @rebuses << {:n => n, :val => val}
       end
-      @data = @rebuses.map { |r| "#{r[:n].to_s.rjust(2, '0')}:#{r[:val]};" }.pack('C*')
+    end
+
+    def serialize_data
+      @data = @rebuses.map { |r| "#{r[:n].to_s.rjust(2, '0')}:#{r[:val]};" }.pack('C*') + '\0'
     end
   end
 
@@ -516,25 +563,20 @@ module Puzrb
 
     def set_time_elapsed secs
       @time_elapsed = secs
-      update
     end
 
     # Note that this just sets the state, it is up to some external object to maintain a timer.
     def start
       @stopped = 0
-      update
     end
 
     # Note that this just sets the state, it is up to some external object to maintain a timer.
     def stop
       @stopped = 1
-      update
     end
 
-    private
-
-    def update
-      @data = "#{@time_elapsed},#{@stopped}"
+    def serialize_data
+      @data = "#{@time_elapsed},#{@stopped}\0"
     end
   end
 
@@ -545,6 +587,8 @@ module Puzrb
     REVEALED       = 0x40 # contents of square were given
     CIRCLED        = 0x80 # square is circled. 
 
+    # GEXT data is a grid of byte bitmasks matching (none or a mixture of) the
+    # constants in this class.
     def data= data
       super
       @states = data.unpack 'C*'
@@ -554,12 +598,17 @@ module Puzrb
       raise "Bad mask:#{mask}" unless [PREV_INCORRECT, CURR_INCORRECT, REVEALED, CIRCLED].include?(mask)
     end
 
+    # blank out all masks
+    def blank!
+      @states = [0] * (@puz.width * @puz.height)
+    end
+
     def set_mask r, c, mask
       check_mask mask
       idx = @puz.rc2idx(r, c)
       @states[idx] |= mask
       # TODO: prevent going to PREV_INCORRECT or CURR_INCORRECT if currently have REVEALED set?
-      #       AcrossLite prevents this in the UI.
+      #       AcrossLite prevents this.
       if mask == PREV_INCORRECT
         @states[idx] ^= CURR_INCORRECT if @states[idx] & CURR_INCORRECT > 0
         @states[idx] ^= REVEALED if @states[idx] & REVEALED > 0
@@ -570,7 +619,6 @@ module Puzrb
         @states[idx] ^= PREV_INCORRECT if @states[idx] & PREV_INCORRECT > 0
         @states[idx] ^= CURR_INCORRECT if @states[idx] & CURR_INCORRECT > 0
       end
-      @data = @states.pack('C*')
     end
 
     def mask r, c
@@ -584,6 +632,10 @@ module Puzrb
 
     def print_states
       puts @states.map { |s| s.to_s(16).rjust(2, '0') }.join.scan(/.{#{@puz.width * 2}}/)
+    end
+
+    def serialize_data
+      @data = @states.pack('C*') + '\0'
     end
   end
 
