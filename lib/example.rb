@@ -1,4 +1,4 @@
-require_relative 'puz'
+require_relative 'puzrb'
 require 'awesome_print'
 
 ARGV.each do |f|

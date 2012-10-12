@@ -1,54 +1,48 @@
 require 'scanf'
 
 module Puzrb
-  module Checksum
-    def chksum data, cksum=0
-      data.each_byte.reduce(cksum) do |p,c|
-        (c + ((p & 0x1 == 0) ? (p >> 1) : (p >> 1 | 0x8000))) & 0xffff
-      end
-    end
-  end
-
   # Encapsulates a puzzle.
   # Provides ability to load (and verify) and write.
   # Provides full editing and checking of puzzle.
   class Puzzle
     include Checksum
 
-    attr_accessor :raw
-    attr_accessor :start_junk
+    attr_reader :raw
+    attr_reader :start_junk
 
-    attr_accessor :checksum # overall checksum
-    attr_accessor :file_magic
+    attr_reader :board_checksum
+    attr_reader :file_magic
 
-    attr_accessor :cib_checksum
-    attr_accessor :masked_low_checksums
-    attr_accessor :masked_high_checksums
+    attr_reader :cib_checksum
+    attr_reader :masked_low_checksums
+    attr_reader :masked_high_checksums
 
-    attr_accessor :version
-    attr_accessor :reserved_1c
-    attr_accessor :scrambled_checksum
-    attr_accessor :reserved_20
+    attr_reader :version
+    attr_reader :reserved_1c
+    attr_reader :scrambled_checksum
+    attr_reader :reserved_20
 
-    attr_accessor :width
-    attr_accessor :height
-    attr_accessor :n_clues
+    attr_reader :width
+    attr_reader :height
+    attr_reader :n_clues
 
-    attr_accessor :bitmask
-    attr_accessor :scrambled_tag
+    attr_reader :bitmask
+    attr_reader :scrambled_tag
 
-    attr_accessor :solution_pos
-    attr_accessor :solution
-    attr_accessor :state
+    attr_reader :solution_pos
+    attr_reader :solution
+    attr_reader :state
 
-    attr_accessor :description
-    attr_accessor :title
-    attr_accessor :author
-    attr_accessor :copyright
-    attr_accessor :clues
-    attr_accessor :notes
+    attr_reader :description
+    attr_reader :title
+    attr_reader :author
+    attr_reader :copyright
+    attr_reader :clues
+    attr_reader :notes
 
-    attr_accessor :extras # hash keyed on extra cmd (GRBD|RTBL|LTIM|GEXT|RUSR)
+    attr_reader :extras # hash keyed on extra cmd (GRBD|RTBL|LTIM|GEXT|RUSR)
+
+    attr_reader :clue_map, :across_clues, :down_clues
 
     # See #method_missing for how COLORS are used to colorify output with ghost methods.
     COLORS = %w(black red green yellow blue magenta cyan white)
@@ -77,7 +71,7 @@ module Puzrb
       @start_junk = io.read(file_magic_idx - 2) # if we have junk at the start
 
       # header
-      @checksum = io.read(2).unpack('v')[0]
+      @board_checksum = io.read(2).unpack('v')[0]
       @file_magic = io.read(12).unpack('Z*')[0]
 
       @cib_checksum = io.read(2).unpack('v')[0]
@@ -123,14 +117,17 @@ module Puzrb
       #       this will ensure bindary compatability with reading then writing, and
       #       match what AcrossLite does.
       if gext.nil?
-        puts "WARNING: no GEXT in puzzle, creating blank"
-        @extras['GEXT'] = g = GEXT.new self
+#        puts "WARNING: no GEXT in puzzle, creating blank"
+        @extras['GEXT'] = g = GEXT.new(self)
         g.blank!
         # force a serialize so that it passes verification by setting length and checksum
         g.serialize
       end
+
+      self
     end
 
+    # Read in a NUL terminated string from io.
     def read_string io
       buf = ''
       while (c = io.read(1)) != "\0"
@@ -139,52 +136,67 @@ module Puzrb
       buf
     end
 
+    def calculate_checksum cs_sym
+      case cs_sym
+      when :cib_checksum
+        chksum [@width,@height,@n_clues,@bitmask,@scrambled_tag].pack('CCvvv')
+      when :board_checksum
+        cs = chksum @solution, calculate_checksum(:cib_checksum)
+        cs = chksum @state, cs
+        [:@title, :@author, :@copyright].each do |a|
+          v = instance_variable_get a
+          cs = chksum("#{v}\0", cs) unless v.nil? || v.empty?
+        end
+        cs = @clues.reduce(cs) { |p,c| chksum c, p }
+        cs = chksum("#{@notes}\0", cs) unless @notes.nil? || @notes.empty?
+        cs
+      when :masked_checksums_base
+        # doesn't correspond to an instance variable, but is used for the other masked checksums
+        cs = 0x0
+        [:@title, :@author, :@copyright].each do |a|
+          v = instance_variable_get a
+          cs = chksum("#{v}\0", cs) unless v.nil? || v.empty?
+        end
+        cs = @clues.reduce(cs) { |p,c| chksum c, p }
+        cs = chksum("#{@notes}\0", cs) unless @notes.nil? || @notes.empty?
+        cs
+      when :masked_low_checksums
+        cs = calculate_checksum :masked_checksums_base
+        [0x49 ^ (calculate_checksum(:cib_checksum) & 0xff),
+         0x43 ^ (chksum(@solution) & 0xff),
+         0x48 ^ (chksum(@state) & 0xff),
+         0x45 ^ (cs & 0xff)].pack('C*').unpack('H*')[0]
+      when :masked_high_checksums
+        cs = calculate_checksum :masked_checksums_base
+        [0x41 ^ ((calculate_checksum(:cib_checksum) & 0xff00) >> 8),
+         0x54 ^ ((chksum(@solution) & 0xff00) >> 8),
+         0x45 ^ ((chksum(@state) & 0xff00) >> 8),
+         0x44 ^ ((cs & 0xff00) >> 8)].pack('C*').unpack('H*')[0]
+      else
+        raise "Don't know about checksum type:#{cs_sym}"
+      end
+    end
+
+    # calculate_checksum, but will raise an error, and print if correct
+    def verify_checksum cs
+      checksum = calculate_checksum cs
+      orig = instance_variable_get "@#{cs.to_s}".to_sym
+      raise "Bad #{cs.id2name} checksum:#{checksum} vs orig:#{orig}" unless checksum == orig
+#      puts "#{cs.id2name} checksum is good:#{checksum}"
+      checksum
+    end
+
     # Check integrity of puzzle (lengths, checksums, cross-referenced elements).
     def verify
+#      puts "NOTE: puzzle is scrambled" if is_scrambled?
+
       # n clues
       raise "Wrong number of clues:#{@clues.length} expected:#{@n_clues}" unless @clues.length == @n_clues
 
-      # CIB checksum
-      cib_cs = cs = chksum [@width,@height,@n_clues,@bitmask,@scrambled_tag].pack('CCvvv')
-      raise "Bad CIB checksum:#{cs} vs orig:#{@cib_checksum}" unless cs == @cib_checksum
-      puts "CIB checksum is good:#{cs}"
-
-      # Primary board checksum
-      cs = chksum @solution, cs
-      cs = chksum @state, cs
-      [:@title, :@author, :@copyright].each do |a|
-        v = instance_variable_get a
-        cs = chksum("#{v}\0", cs) unless v.nil? || v.empty?
-      end
-      cs = @clues.reduce(cs) { |p,c| chksum c, p }
-      cs = chksum("#{@notes}\0", cs) unless @notes.nil? || @notes.empty?
-      raise "Bad checksum:#{cs} vs orig:#{@checksum}" unless cs == @checksum
-      puts "Checksum is good:#{cs}"
-
-      # Masked checksums
-      sol_cs = chksum @solution
-      grd_cs = chksum @state
-      cs = 0x0
-      [:@title, :@author, :@copyright].each do |a|
-        v = instance_variable_get a
-        cs = chksum("#{v}\0", cs) unless v.nil? || v.empty?
-      end
-      cs = @clues.reduce(cs) { |p,c| chksum c, p }
-      cs = chksum("#{@notes}\0", cs) unless @notes.nil? || @notes.empty?
-      low = [0x49 ^ (cib_cs & 0xff),
-             0x43 ^ (sol_cs & 0xff),
-             0x48 ^ (grd_cs & 0xff),
-             0x45 ^ (cs & 0xff)].pack('C*').unpack('H*')[0]
-      raise "Bad masked low checksums:#{low} vs orig:#{@masked_low_checksums}" unless
-        low == @masked_low_checksums
-      puts "Masked low checksum is good:#{low}"
-      hi = [0x41 ^ ((cib_cs & 0xff00) >> 8),
-            0x54 ^ ((sol_cs & 0xff00) >> 8),
-            0x45 ^ ((grd_cs & 0xff00) >> 8),
-            0x44 ^ ((cs & 0xff00) >> 8)].pack('C*').unpack('H*')[0]
-      raise "Bad masked high checksums:#{hi} vs orig:#{@masked_high_checksums}" unless
-        hi == @masked_high_checksums
-      puts "Masked high checksum is good:#{hi}"
+      verify_checksum :cib_checksum
+      verify_checksum :board_checksum
+      verify_checksum :masked_low_checksums
+      verify_checksum :masked_high_checksums
 
       # Extras
       @extras.each_pair { |name,e| e.verify }
@@ -388,6 +400,25 @@ module Puzrb
       end.flatten.compact.all? { |e| !!e } # if we have all 'true' squares then solution is correct
     end
 
+    def reveal_letter r, c
+      return nil if is_scrambled?
+
+      if ! is_letter? r, c
+        raise "Bad row:#{r},col:#{c}"
+      end
+      sol_l = solution_letter_at(r, c)
+      if letter_at(r, c) != sol_l
+        @state[rc2idx(r, c)] = sol_l
+        gext.set_mask r, c, GEXT::REVEALED
+      end
+    end
+
+    def reveal_word r, c, dir
+    end
+
+    def reveal_all
+    end
+
     # Scrambled current state with the given 4-digit key.
     def scramble key
       # solution is the completed grid column-wise rather than the normal row-wise, with
@@ -474,14 +505,14 @@ module Puzrb
     # Binary form of puzzle
     def serialize
       out = @start_junk +
-        [@checksum, @file_magic, @cib_checksum].pack('vZ12v') +
+        [@board_checksum, @file_magic, @cib_checksum].pack('vZ12v') +
         [@masked_low_checksums, @masked_high_checksums].pack('H8H8') +
         [@version, @reserved_1c, @scramble_checksum, @reserved_20].pack('Z*Z2Z2Z12') +
         [@width, @height, @n_clues, @bitmask, @scrambled_tag].pack('CCvvv') +
         @solution + @state +
         [@title, @author, @copyright].map { |s| zstring s }.join +
         @clues.map { |s| zstring s }.join +
-        zstring(@notes) # TODO: only do this for >v1.3
+        zstring(@notes) # TODO: only do this for >=v1.3
       %w(GRBS RTBL LTIM GEXT RUSR).each do |e|
         if ex = @extras[e]
           out += ex.serialize
@@ -501,218 +532,4 @@ module Puzrb
     end
   end
 
-  # Base class for extra sections.
-  # TODO: move to separate source file.
-  class PuzExtra
-    include Checksum
-
-    attr_accessor :name
-    attr_accessor :length
-    attr_accessor :checksum
-    attr_accessor :data
-
-    def initialize puz
-      @puz = puz
-    end
-
-    # Override to treat data in a specific way, but call super
-    def data= data
-      @data = data
-    end
-
-    def name
-      self.class.name.split('::')[-1]
-    end
-
-    def verify
-      raise "Bad length for extra:#{name}, length:#{data.length} expected:#{length}" unless
-        data.length == length + 1
-      puts "Extra:#{name} length is good:#{length}"
-      cs = chksum data[0..-2] # data was read with \0, so strip for checksum
-      raise "Bad extra:#{name} checksum:#{cs} expected:#{checksum}" unless
-        cs == checksum
-      puts "Extra:#{name} checksum is good:#{cs}"
-    end
-
-    # Subclasses must implement this.
-    def serialize_data
-      raise NotImplementedError
-    end
-
-    # Pack contents.
-    # Updates checksum and length.
-    # #serialize_data will be called first, so ensure it's implemented.
-    def serialize
-      serialize_data
-      @length = data[0..-2].length
-      @checksum = chksum data[0..-2]
-      name + [length, chksum(data[0..-2])].pack('vv') + data
-    end
-  end
-
-  # Where rebuses are located in the puzzle.
-  class GRBS < PuzExtra
-    def data= data
-      super
-      @board = data.unpack 'C*'
-    end
-
-    def is_rebus? r, c
-      rebus_at(r, c) != 0
-    end
-
-    # Get rebus number for position.
-    # Note that if there is a rebus number at the given position it is decremented before
-    # returning so that it matches RTBL number.
-    def rebus_n_at r, c
-      # raise?
-      return 0 unless @puz.is_letter? r, c
-      r = @board[r * @puz.width + c]
-      r > 0 ? r - 1 : r
-    end
-
-    # Print whole grid showing rebus numbers.
-    def print_board
-      puts @board.map { |s| s.to_s(16).rjust(2, '0') }.join.scan(/.{#{@puz.width * 2}}/)
-    end
-
-    # Set rebus number for the given row,col.
-    def set_rebus_n r, c, rebus_n
-      @board[r * @puz.width + c] = rebus_n + 1
-    end
-
-    def serialize_data
-      @data = @board.pack('C*') + '\0'
-    end
-  end
-
-  # Rebuses in the solution.
-  # Rebus numbers in GBRS must correspond to numbers here (-1).
-  class RTBL < PuzExtra
-    def data= data
-      super
-      @rebuses = data.rstrip.split(';').map do |r|
-        k,v = r.split ':'
-        { :n => k.to_i, :val => v }
-      end
-    end
-
-    def rebus_for_n n
-      @rebuses.find { |r| r[:n] == n }
-    end
-
-    # Return all rebuses.
-    # Clone to restrict mutability to this class.
-    def rebuses
-      @rebuses.clone
-    end
-
-    def set_rebus_for_n n, val
-      current = rebus_for_n n
-      if current
-        current[:val] = val
-      else
-        @rebuses << {:n => n, :val => val}
-      end
-    end
-
-    def serialize_data
-      @data = @rebuses.map { |r| "#{r[:n].to_s.rjust(2, '0')}:#{r[:val]};" }.pack('C*') + '\0'
-    end
-  end
-
-  # Timer information.
-  class LTIM < PuzExtra
-    attr_accessor :time_elapsed
-
-    def data= data
-      super
-      @time_elapsed, @stopped = data.scanf '%d,%d'
-    end
-
-    def set_time_elapsed secs
-      @time_elapsed = secs
-    end
-
-    # Note that this just sets the state, it is up to some external object to maintain a timer.
-    def start
-      @stopped = 0
-    end
-
-    # Note that this just sets the state, it is up to some external object to maintain a timer.
-    def stop
-      @stopped = 1
-    end
-
-    def serialize_data
-      @data = "#{@time_elapsed},#{@stopped}\0"
-    end
-  end
-
-  # Flags for squares in the current state.
-  class GEXT < PuzExtra
-    PREV_INCORRECT = 0x10 # square was previously marked incorrect
-    CURR_INCORRECT = 0x20 # square is currently marked incorrect
-    REVEALED       = 0x40 # contents of square were given
-    CIRCLED        = 0x80 # square is circled. 
-
-    # GEXT data is a grid of byte bitmasks matching (none or a mixture of) the
-    # constants in this class.
-    def data= data
-      super
-      @states = data.unpack 'C*'
-    end
-
-    def check_mask mask
-      raise "Bad mask:#{mask}" unless [PREV_INCORRECT, CURR_INCORRECT, REVEALED, CIRCLED].include?(mask)
-    end
-
-    # blank out all masks
-    def blank!
-      @states = [0] * (@puz.width * @puz.height)
-    end
-
-    def set_mask r, c, mask
-      check_mask mask
-      idx = @puz.rc2idx(r, c)
-      @states[idx] |= mask
-      # TODO: prevent going to PREV_INCORRECT or CURR_INCORRECT if currently have REVEALED set?
-      #       AcrossLite prevents this.
-      if mask == PREV_INCORRECT
-        @states[idx] ^= CURR_INCORRECT if @states[idx] & CURR_INCORRECT > 0
-        @states[idx] ^= REVEALED if @states[idx] & REVEALED > 0
-      elsif mask == CURR_INCORRECT
-        @states[idx] ^= PREV_INCORRECT if @states[idx] & PREV_INCORRECT > 0
-        @states[idx] ^= REVEALED if @states[idx] & REVEALED > 0
-      elsif mask == REVEALED
-        @states[idx] ^= PREV_INCORRECT if @states[idx] & PREV_INCORRECT > 0
-        @states[idx] ^= CURR_INCORRECT if @states[idx] & CURR_INCORRECT > 0
-      end
-    end
-
-    def mask r, c
-      @states[r * @puz.width + c]
-    end
-
-    def mask? r, c, mask
-      check_mask mask
-      @states[@puz.rc2idx(r, c)] & mask > 0
-    end
-
-    def print_states
-      puts @states.map { |s| s.to_s(16).rjust(2, '0') }.join.scan(/.{#{@puz.width * 2}}/)
-    end
-
-    def serialize_data
-      @data = @states.pack('C*') + '\0'
-    end
-  end
-
-  # User entered values for rebus squares.
-  class RUSR < PuzExtra
-    def data= data
-      super
-      @states = data.unpack 'C*'
-    end
-  end
 end
