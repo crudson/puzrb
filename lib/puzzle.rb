@@ -26,7 +26,7 @@ module Puzrb
     attr_reader :height
     attr_reader :n_clues
 
-    attr_reader :bitmask
+    attr_reader :bitmask # unknown as to what this is, usually 1
     attr_reader :scrambled_tag
 
     attr_reader :solution_pos
@@ -43,6 +43,8 @@ module Puzrb
     attr_reader :extras # hash keyed on extra cmd (GRBD|RTBL|LTIM|GEXT|RUSR)
 
     attr_reader :clue_map, :across_clues, :down_clues
+
+    attr_reader :design_mode
 
     # See #method_missing for how COLORS are used to colorify output with ghost methods.
     COLORS = %w(black red green yellow blue magenta cyan white)
@@ -63,7 +65,10 @@ module Puzrb
     # This does not verify the integrity of the data with respect to checksums.
     # see #verify
     def _load io
-      @raw = io.read #.unpack('v*')
+      # We're not setting solution letters or clues (but this could be set subsequently)
+      @design_mode = false
+
+      @raw = io.read
       io.rewind
 
       file_magic_idx = @raw.index "ACROSS&DOWN"
@@ -91,7 +96,6 @@ module Puzrb
       @scrambled_tag = io.read(2).unpack('v')[0]
 
       # solution: . is black square
-      @solution_pos = io.pos
       @solution = io.read(@width * @height)
       @state = io.read(@width * @height)
 
@@ -182,13 +186,12 @@ module Puzrb
       checksum = calculate_checksum cs
       orig = instance_variable_get "@#{cs.to_s}".to_sym
       raise "Bad #{cs.id2name} checksum:#{checksum} vs orig:#{orig}" unless checksum == orig
-#      puts "#{cs.id2name} checksum is good:#{checksum}"
       checksum
     end
 
     # Check integrity of puzzle (lengths, checksums, cross-referenced elements).
     def verify
-#      puts "NOTE: puzzle is scrambled" if is_scrambled?
+      puts "NOTE: puzzle is scrambled" if is_scrambled?
 
       # n clues
       raise "Wrong number of clues:#{@clues.length} expected:#{@n_clues}" unless @clues.length == @n_clues
@@ -248,7 +251,7 @@ module Puzrb
             # across
             if c > 0 && !is_black?(r, c-1) # have white to left, inherit clue
               val[:across] = @clue_map[rc2idx(r, c) - 1][:across]
-            elsif c < @width - 1 && !is_black?(r, c+1) # have white to right, start of across
+            elsif c < @width - 1 && !is_black?(r, c + 1) # have white to right, start of across
               val[:across] = @across_clues.length
               val[:is_across_start] = true
               @across_clues << [clue_idx += 1,global_clue_n += 1]
@@ -256,7 +259,7 @@ module Puzrb
             # down
             if r > 0 && !is_black?(r-1, c) # have white above, inherit clue
               val[:down] = @clue_map[rc2idx(r -1 , c)][:down]
-            elsif r < @height - 1 && !is_black?(r+1, c) # have white below, start of down
+            elsif r < @height - 1 && !is_black?(r + 1, c) # have white below, start of down
               val[:down] = @down_clues.length
               val[:is_down_start] = true
               # Increment global clue iff we didn't start an across clue
@@ -339,7 +342,7 @@ module Puzrb
 
     # Set rebus string 's' at row,col.
     def set_rebus_at r, c, s
-      
+      # TODO
     end
 
     # Whether the given row,col is a letter (rather than outside the grid or a black square).
@@ -391,13 +394,16 @@ module Puzrb
     # either way.
     def check_all
       if is_scrambled?
-        # TODO
+        # Match scrambled_checksum with user grid
+        puts "scrambled_checksum:#{@scrambled_checksum} chksum:#{chksum @state}"
+        @scrambled_checksum == chksum(@state)
+      else
+        (0...@height).map do |r|
+          (0...@width).map do |c|
+            is_letter?(r,c) ? check_letter(r,c) : nil
+          end
+        end.flatten.compact.all? { |e| !!e } # if we have all 'true' squares then solution is correct
       end
-      (0...@height).map do |r|
-        (0...@width).map do |c|
-          is_letter?(r,c) ? check_letter(r,c) : nil
-        end
-      end.flatten.compact.all? { |e| !!e } # if we have all 'true' squares then solution is correct
     end
 
     def reveal_letter r, c
@@ -414,9 +420,28 @@ module Puzrb
     end
 
     def reveal_word r, c, dir
+      return nil if is_scrambled?
+
+      raise "Bad direction:#{dir.inspect}" unless [:across, :down].include?(dir)
+      # get which clue mapping r,c is for
+      letter = @clue_map[rc2idx(r, c)]
+      # check all squares which are the same word for the given direction
+      @clue_map.select { |i,c| c[dir] == letter[dir] }.each { |i,c|
+        r, c = idx2rc i
+        reveal_letter r, c
+      }
     end
 
     def reveal_all
+      return nil if is_scrambled?
+
+      (0...@height).each do |r|
+        (0...@width).each do |c|
+          if is_letter? r, c
+            reveal_letter r, c
+          end
+        end
+      end
     end
 
     # Scrambled current state with the given 4-digit key.
@@ -503,22 +528,32 @@ module Puzrb
     end
 
     # Binary form of puzzle
-    def serialize
-      out = @start_junk +
-        [@board_checksum, @file_magic, @cib_checksum].pack('vZ12v') +
-        [@masked_low_checksums, @masked_high_checksums].pack('H8H8') +
-        [@version, @reserved_1c, @scramble_checksum, @reserved_20].pack('Z*Z2Z2Z12') +
-        [@width, @height, @n_clues, @bitmask, @scrambled_tag].pack('CCvvv') +
-        @solution + @state +
-        [@title, @author, @copyright].map { |s| zstring s }.join +
-        @clues.map { |s| zstring s }.join +
-        zstring(@notes) # TODO: only do this for >=v1.3
+    def serialize io
+      to_write = [@start_junk,
+                  [@board_checksum, @file_magic, @cib_checksum].pack('vZ12v'),
+                  [@masked_low_checksums, @masked_high_checksums].pack('H8H8'),
+                  [@version, @reserved_1c, @scrambled_checksum, @reserved_20].pack('Z4Z2vZ12'),
+                  [@width, @height, @n_clues, @bitmask, @scrambled_tag].pack('CCvvv'),
+                  @solution,
+                  @state,
+                  [@title, @author, @copyright].map { |s| zstring(s) }.join,
+                  @clues.map { |s| zstring(s) }.join,
+                  zstring(@notes)] # TODO: only do this for >=v1.3
+
       %w(GRBS RTBL LTIM GEXT RUSR).each do |e|
         if ex = @extras[e]
-          out += ex.serialize
+          to_write << ex.serialize
         end
       end
-      out
+
+      to_write.each { |data| io.write data }
+
+      # We'll leave encodings as is, and not do the conversions below.
+      # Some crossword sources use UTF-8 and we'll let other things (i.e. AcrossLite)
+      # deal with it.
+      #
+      #      to_write.each { |data| data.force_encoding('ISO-8859-1') }
+      #      to_write.join
     end
 
     # Provides convenience ghost methods for color printing.
@@ -530,6 +565,65 @@ module Puzrb
         super
       end
     end
+
+    # +++++ following methods are related to starting a new puzzle from scratch
+    #       rather than loading one from a file
+
+    # Start a new, empty, editable puzzle.
+    # Editable means the solution grid and clues can be set.
+    # width and height are required.
+    def self.new_blank width, height
+      puzzle = Puzzle.new
+
+      # instance_eval here is very helpful as we don't have to keep referring
+      # to puzzle to set state.
+      puzzle.instance_eval do
+        @design_mode = true
+
+        @start_junk = ''
+
+        @board_checksum = 0
+        @file_magic = "ACROSS&DOWN\0"
+
+        @cib_checksum = 0
+        @masked_low_checksums = 0
+        @masked_high_checksums = 0
+
+        @version = "1.3"
+        @reserved_1c = ''
+        @scrambled_checksum = 0
+        @reserved_20 = ''
+
+        @width = width
+        @height = height
+        @n_clues = 0
+
+        @bitmask = 1
+        @scrambled_tag = 0
+
+        @solution = '.' * @width * @height
+        @state = '.' * @width * @height
+
+        @title = ''
+        @author = ''
+        @copyright = ''
+        @clues = []
+        @notes = ''
+
+        @extras = {}
+
+        @extras['GEXT'] = g = GEXT.new(self)
+        g.blank!
+        g.serialize
+      end
+
+      puzzle
+    end
+
+    def set_solution_letter row, col, letter #, clue_number
+      @solution[rc2idx(row, col)] = letter
+    end
+
   end
 
 end
